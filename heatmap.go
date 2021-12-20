@@ -12,6 +12,8 @@ type heatMap struct {
 	image     *image.RGBA
 	blockSize int
 	baseColor color.RGBA
+	width     int
+	height    int
 }
 
 var (
@@ -24,28 +26,31 @@ var (
 	//Magenta = color.RGBA{255, 0, 255, 255}
 )
 
-func hewHeatMap(xDim, yDim int, blockSize int) *heatMap {
+func newHeatMap(xDim, yDim int, blockSize int) *heatMap {
 	return &heatMap{
 		image:     image.NewRGBA(image.Rect(0, 0, blockSize*xDim, blockSize*yDim)),
 		blockSize: blockSize,
 		baseColor: Black,
+		width:     xDim,
+		height:    yDim,
 	}
 }
 
-// AddBlock shades the block at (x,y} according to the score
+// AddBlock shades the block at (x, y), colored according to the score
 func (h *heatMap) AddBlock(x, y int, score float32) {
 	col := floatToRGBA(score, h.baseColor)
 
-	// TODO: figure out which way the image is orientated.
 	for x1 := x * h.blockSize; x1 < (x+1)*h.blockSize; x1++ {
-		for y1 := y * h.blockSize; y1 < (y+1)*h.blockSize; y1++ {
+		// Flip image around the x axis so that the y coordinate increases upwards, not downwards.
+		for y1 := (h.height - y) * h.blockSize; y1 > (h.height-(y+1))*h.blockSize; y1-- {
 			h.image.Set(x1, y1, col)
 		}
 	}
 }
 
+// DrawHeatMap produces a heatmap image PNG with filenam "name.png"
 func DrawHeatMap(data [][]float32, blockSize int, name string) {
-	h := hewHeatMap(len(data), len(data[0]), blockSize)
+	h := newHeatMap(len(data), len(data[0]), blockSize)
 
 	for i, d := range data {
 		for j, s := range d {
