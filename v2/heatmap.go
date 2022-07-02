@@ -58,12 +58,7 @@ func validate(xDim, yDim int, data [][]float32) error {
 func sliceToMax(nums []float32) []float32 {
 	r := make([]float32, len(nums))
 
-	maxVal := float32(0)
-	for _, num := range nums {
-		if num >= maxVal {
-			maxVal = num
-		}
-	}
+	_, maxVal := minAndMax(nums)
 
 	// Need to handle possibility of multiple ocurrences of max value
 	maxIndex := []int{}
@@ -80,12 +75,43 @@ func sliceToMax(nums []float32) []float32 {
 	return r
 }
 
-// MaxY returns a new HeatMap with the maximum of each column of the original HeatMap set to 1, and 0 everywhere else.
-func (h *HeatMap) MaxY() *HeatMap {
+// minAndMax returns the minimum and maximum values in the slice.
+func minAndMax(n []float32) (float32, float32) {
+	minVal := n[0]
+	maxVal := n[0]
+
+	for _, num := range n[1:] {
+		if num < minVal {
+			minVal = num
+		}
+
+		if num > maxVal {
+			maxVal = num
+		}
+	}
+
+	return minVal, maxVal
+}
+
+// rescale rescales all values within the slice to fit between 0 and 1.
+func rescale(nums []float32) []float32 {
+	r := make([]float32, len(nums))
+
+	min, max := minAndMax(nums)
+
+	for _, n := range nums {
+		s := (n - min) / (max - min)
+		r = append(r, s)
+	}
+
+	return r
+}
+
+func (h *HeatMap) transform(mapping func([]float32) []float32) *HeatMap {
 	newData := make([][]float32, h.width)
 
 	for i, data := range h.data {
-		newData[i] = sliceToMax(data)
+		newData[i] = mapping(data)
 	}
 
 	r := &HeatMap{
@@ -95,6 +121,21 @@ func (h *HeatMap) MaxY() *HeatMap {
 	}
 
 	return r
+}
+
+// RescaleY returns a new HeatMap with each column rescaled relative to the min and max values within that column.
+func (h *HeatMap) RescaleY() *HeatMap {
+	return h.transform(rescale)
+}
+
+// RescaleX returns a new HeatMap with each row rescaled relative to the min and max values within that row.
+func (h *HeatMap) RescaleX() *HeatMap {
+	return h.Transpose().RescaleY().Transpose()
+}
+
+// MaxY returns a new HeatMap with the maximum of each column of the original HeatMap set to 1, and 0 everywhere else.
+func (h *HeatMap) MaxY() *HeatMap {
+	return h.transform(sliceToMax)
 }
 
 func transpose(data [][]float32) [][]float32 {

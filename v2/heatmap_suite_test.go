@@ -235,6 +235,31 @@ var _ = Describe("HeatMap tests", func() {
 		})
 	})
 
+	Describe("minAndMax", func() {
+		var a []float32
+		var min float32
+		var max float32
+
+		JustBeforeEach(func() {
+			min, max = minAndMax(a)
+		})
+
+		Context("when called", func() {
+
+			BeforeEach(func() {
+				a = []float32{1.1, -3.2, 13.7, 13.9}
+			})
+
+			It("returns the min value in the slice", func() {
+				Expect(min).To(Equal(float32(-3.2)))
+			})
+
+			It("returns the max value in the slice", func() {
+				Expect(max).To(Equal(float32(13.9)))
+			})
+		})
+	})
+
 	Describe("transpose", func() {
 		var a, r [][]float32
 
